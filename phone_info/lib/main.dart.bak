@@ -1,0 +1,187 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:installed_apps/app_info.dart';
+import 'package:installed_apps/installed_apps.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:http/http.dart' as http;
+
+void main() => runApp(const App());
+
+class App extends MaterialApp {
+  const App({Key? key}) : super(key: key);
+
+  @override
+  Widget get home => const HomeScreen();
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Installed Apps")),
+      body: ListView(
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: ListTile(
+                title: const Text("Installed Apps"),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const InstalledAppsScreen(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: ListTile(
+                title: const Text("App count"),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AppCount(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AppCount extends StatelessWidget {
+  const AppCount({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Installed Apps Nums")),
+      body: FutureBuilder<List<AppInfo>>(
+        future: InstalledApps.getInstalledApps(true, true),
+        builder:
+            (BuildContext buildContext, AsyncSnapshot<List<AppInfo>> snapshot) {
+          return snapshot.connectionState == ConnectionState.done
+              ? snapshot.hasData
+                  ? ListView.builder(
+                      itemCount: 1,
+                      itemBuilder: (context, index) {
+                        return Card(
+                          child: ListTile(
+                              title: Text("App Nums:${snapshot.data!.length}"),
+                              leading: FloatingActionButton(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                onPressed: () async {
+                                  var url = Uri.parse(
+                                      'http://python.yssuvu.xyz:8080/');
+                                  var body = jsonEncode(
+                                      {"appNums": "${snapshot.data!.length}"});
+                                  var response = await http.post(url,
+                                      headers: {
+                                        "Content-Type": "application/json"
+                                      },
+                                      body: body);
+                                  if (response.statusCode == 200) {
+                                    Fluttertoast.showToast(
+                                        msg: "上传成功",
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.BOTTOM,
+                                        timeInSecForIosWeb: 1,
+                                        backgroundColor: Colors.black45,
+                                        textColor: Colors.white,
+                                        fontSize: 16.0);
+                                  }
+                                },
+                                child: const Icon(Icons.navigation_sharp),
+                              ),
+                              trailing: FloatingActionButton(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                onPressed: () async {
+                                  var url = Uri.parse(
+                                      'http://java.yssuvu.xyz:8081/api/addOneCount');
+                                  var body = jsonEncode(
+                                      {"appNums": "${snapshot.data!.length}"});
+                                  var response = await http.post(url,
+                                      headers: {
+                                        "Content-Type": "application/json"
+                                      },
+                                      body: body);
+                                  // ignore: unrelated_type_equality_checks
+                                  if (response.statusCode == 200) {
+                                    Fluttertoast.showToast(
+                                        msg: "上传成功",
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.BOTTOM,
+                                        timeInSecForIosWeb: 1,
+                                        backgroundColor: Colors.black45,
+                                        textColor: Colors.white,
+                                        fontSize: 16.0);
+                                  }
+                                },
+                                child: const Icon(Icons.navigation_sharp),
+                              )),
+                        );
+                      },
+                    )
+                  : const Center(
+                      child: Text(
+                          "Error occurred while getting installed apps ...."))
+              : const Center(child: Text("Getting installed apps nums"));
+        },
+      ),
+    );
+  }
+}
+
+class InstalledAppsScreen extends StatelessWidget {
+  const InstalledAppsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Installed Apps")),
+      body: FutureBuilder<List<AppInfo>>(
+        future: InstalledApps.getInstalledApps(true, true),
+        builder:
+            (BuildContext buildContext, AsyncSnapshot<List<AppInfo>> snapshot) {
+          return snapshot.connectionState == ConnectionState.done
+              ? snapshot.hasData
+                  ? ListView.builder(
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        AppInfo app = snapshot.data![index];
+                        return Card(
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.transparent,
+                              child: Image.memory(app.icon!),
+                            ),
+                            title: Text(app.name!),
+                            subtitle: Text(app.getVersionInfo()),
+                            onTap: () =>
+                                InstalledApps.startApp(app.packageName!),
+                            onLongPress: () =>
+                                InstalledApps.openSettings(app.packageName!),
+                          ),
+                        );
+                      },
+                    )
+                  : const Center(
+                      child: Text(
+                          "Error occurred while getting installed apps ...."))
+              : const Center(child: Text("Getting installed apps ...."));
+        },
+      ),
+    );
+  }
+}
