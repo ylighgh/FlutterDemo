@@ -10,7 +10,7 @@ def insert_value(value: str) -> bool:
     :param value: 插入的数据
     """
     return get_exit_status_of_cmd(
-        f"mysql -uroot -pwl991224 -haliyun -e 'use hotel;insert into app (app_nums) values({value});'")
+        f"mysql -uroot -p* -haliyun -e 'use hotel;insert into app (app_nums) values({value});'")
 
 
 def create_server():
